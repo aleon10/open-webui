@@ -12,11 +12,11 @@ python3 -m venv $VENV_DIR
 source $VENV_DIR/bin/activate
 
 # Install open-webui dependencies
-pip install -r /path/to/open-webui/requirements.txt
+pip install -r /workspaces/open-webui/requirements.txt
 
 # Configure npm to install dependencies in /tmp
 mkdir -p /tmp/open-webui-npm
-cd /path/to/open-webui
+cd /workspaces/open-webui
 npm config set prefix /tmp/open-webui-npm
 npm install
 
