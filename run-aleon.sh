@@ -95,9 +95,9 @@ setup_nodejs() {
     npm config set cache /tmp/npm-cache
     npm config set prefix /tmp/npm-global
     
-    # Установка зависимостей
+    # Установка зависимостей (npm ci checks engine; use install --force for Node v24)
     log_info "Установка npm зависимостей (это займет время)..."
-    npm ci --prefer-offline --no-audit --legacy-peer-deps 2>&1 | tee -a "$LOG_FILE"
+    npm install --prefer-offline --no-audit --legacy-peer-deps --force 2>&1 | tee -a "$LOG_FILE"
     
     log_success "npm зависимости установлены"
 }
@@ -127,13 +127,19 @@ setup_python() {
     log_info "Обновление pip, setuptools, wheel..."
     pip install --upgrade pip setuptools wheel --cache-dir /tmp/pip-cache 2>&1 | tail -5
     
-    # Проверяем requirements.txt
-    if [ -f "$WORK_DIR/requirements.txt" ]; then
+    # Проверяем requirements.txt (in current dir or backend subdir)
+    if [ -f "./requirements.txt" ]; then
         log_info "Установка Python зависимостей из requirements.txt..."
-        pip install -r requirements.txt --cache-dir /tmp/pip-cache 2>&1 | tee -a "$LOG_FILE"
+        pip install -r ./requirements.txt --cache-dir /tmp/pip-cache 2>&1 | tee -a "$LOG_FILE"
+    elif [ -f "./backend/requirements.txt" ]; then
+        log_info "Установка Python зависимостей из backend/requirements.txt..."
+        pip install -r ./backend/requirements.txt --cache-dir /tmp/pip-cache 2>&1 | tee -a "$LOG_FILE"
+    elif [ -f "$WORK_DIR/requirements.txt" ]; then
+        log_info "Установка Python зависимостей из requirements.txt..."
+        pip install -r "$WORK_DIR/requirements.txt" --cache-dir /tmp/pip-cache 2>&1 | tee -a "$LOG_FILE"
     elif [ -f "$WORK_DIR/pyproject.toml" ]; then
         log_info "Установка Python зависимостей из pyproject.toml..."
-        pip install -e . --cache-dir /tmp/pip-cache 2>&1 | tee -a "$LOG_FILE"
+        pip install -e "$WORK_DIR" --cache-dir /tmp/pip-cache 2>&1 | tee -a "$LOG_FILE"
     fi
     
     log_success "Python зависимости установлены"
@@ -258,4 +264,25 @@ main() {
 }
 
 # Запуск
-main
+if [ "$#" -gt 0 ]; then
+    case "$1" in
+        setup_nodejs)
+            setup_nodejs
+            exit 0
+            ;;
+        setup_python)
+            setup_python
+            exit 0
+            ;;
+        build)
+            build_app
+            exit 0
+            ;;
+        *)
+            echo "Unknown command: $1"
+            exit 1
+            ;;
+    esac
+else
+    main
+fi
